@@ -1,0 +1,10 @@
+﻿__pycache__/
+*.pyc
+*.pyo
+recordings/*.json
+config.json
+icon.ico
+server.log
+*.log
+.venv/
+env/
