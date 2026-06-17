@@ -33,10 +33,10 @@ A lightweight Windows tool for recording and replaying mouse movements, clicks, 
 
 ```bash
 pip install pynput
-python main.py
+python main.py`n`nThe app opens in its own native window (no browser needed).
 ```
 
-The web UI opens automatically at `http://127.0.0.1:8765`.
+The app opens in its own native window.
 
 ## Project Structure
 
@@ -48,7 +48,7 @@ MouseRecorder/
 ├── hotkey_manager.py    # Global hotkey registration
 ├── tray.py              # System tray icon (pure Win32)
 ├── storage.py           # Recording file persistence
-├── web_server.py        # Built-in HTTP API server
+├── web_server.py          # Built-in HTTP API server
 ├── config.py            # User configuration
 ├── static/index.html    # Web management UI
 ├── recordings/          # Saved recordings (gitignored)
@@ -88,4 +88,5 @@ python -m PyInstaller MouseRecorder.spec --clean --noconfirm
 Or simply run `build.bat`.
 
 The output is at `dist/MouseRecorder.exe` (~7.5 MB, no Python required).
+
 

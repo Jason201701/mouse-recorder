@@ -1,10 +1,10 @@
-﻿"""主入口 — 协调录制、回放、热键、Web 界面、托盘图标"""
+﻿"""主入口 — 协调录制、回放、热键、托盘、原生窗口"""
 
 import os
 import sys
 import time
 import threading
-import webbrowser
+import webview
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
@@ -26,9 +26,10 @@ class App:
         self._recorder = Recorder(mode=self.config.get("record_mode", "absolute"))
         self._player = Player()
         self._hotkeys = HotkeyManager()
-        self._tray = TrayIcon()
+        self._tray = TrayIcon(get_hwnd=self._get_window_hwnd)
         self._server = WebServer(self, port=8765)
         self._last_selected_id = None
+        self._window = None
 
     # ---- 录制 ----
     def start_recording(self, mode=None):
@@ -129,6 +130,16 @@ class App:
     def refresh_config(self):
         self.config = cfg.load_config()
 
+    # ---- 原生窗口 ----
+    def _get_window_hwnd(self):
+        """供 tray 模块获取窗口句柄"""
+        try:
+            if self._window:
+                return int(self._window.native.handle)
+        except Exception:
+            pass
+        return None
+
     # ---- 生命周期 ----
     def shutdown(self):
         if self._recorder and self._recorder.recording:
@@ -138,26 +149,42 @@ class App:
             self._player.stop()
         self._hotkeys.stop()
         self._server.stop()
+        # 关闭 pywebview 窗口
+        try:
+            if self._window:
+                self._window.destroy()
+        except Exception:
+            pass
 
     def run(self):
         self._update_hotkey_listeners()
         self._hotkeys.start()
         url = self._server.start()
+
         print(f"Mouse Recorder 已启动")
-        print(f"Web 界面: {url}")
         print(f"录制热键: Ctrl+Shift+F9")
         print(f"回放热键: Ctrl+Shift+F10")
         print(f"停止热键: Ctrl+Shift+F11")
-        print(f"按 Ctrl+C 退出")
-        threading.Thread(target=lambda: (time.sleep(0.5), webbrowser.open(url)), daemon=True).start()
-        try:
-            while True:
-                time.sleep(1)
-        except KeyboardInterrupt:
-            print("\n正在退出...")
-            self.shutdown()
+
+        # 创建原生窗口
+        self._window = webview.create_window(
+            title="Mouse Recorder",
+            url=url,
+            width=720,
+            height=540,
+            min_size=(600, 400),
+            resizable=True,
+            easy_drag=False,
+        )
+
+        # 启动窗口事件循环（阻塞）
+        webview.start(gui="edgechromium", debug=False)
+
+        # 窗口关闭后清理
+        self.shutdown()
 
 
 if __name__ == "__main__":
     app = App()
     app.run()
+

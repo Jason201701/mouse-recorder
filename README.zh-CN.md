@@ -33,7 +33,7 @@
 
 ```bash
 pip install pynput
-python main.py
+python main.py`n`n程序会在原生窗口中打开（无需浏览器）。
 ```
 
 浏览器会自动打开管理界面 `http://127.0.0.1:8765`。
@@ -88,4 +88,5 @@ python -m PyInstaller MouseRecorder.spec --clean --noconfirm
 或直接双击运行 `build.bat`。
 
 输出文件位于 `dist/MouseRecorder.exe`（约 7.5 MB，无需安装 Python）。
+
 
