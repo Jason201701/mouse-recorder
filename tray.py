@@ -1,4 +1,4 @@
-﻿"""系统托盘图标模块 — 纯 Win32 API，录制时显示计时"""
+﻿"""系统托盘图标模块 — 录制/回放状态显示"""
 
 import ctypes
 import os
@@ -17,13 +17,14 @@ NIF_TIP = 0x04
 WM_USER_TRAY = 0x0401 + 100
 SW_MINIMIZE = 6
 SW_RESTORE = 9
+SW_SHOW = 5
 
 user32 = ctypes.windll.user32
 shell32 = ctypes.windll.shell32
 kernel32 = ctypes.windll.kernel32
 
 
-# ---- WNDCLASS 结构 ----
+# ---- WNDCLASS ----
 class WNDCLASSW(ctypes.Structure):
     _fields_ = [
         ("style", wintypes.UINT),
@@ -39,7 +40,7 @@ class WNDCLASSW(ctypes.Structure):
     ]
 
 
-# ---- NOTIFYICONDATA 结构 ----
+# ---- NOTIFYICONDATA ----
 class NOTIFYICONDATA(ctypes.Structure):
     _fields_ = [
         ("cbSize", wintypes.DWORD),
@@ -58,51 +59,42 @@ class NOTIFYICONDATA(ctypes.Structure):
     ]
 
 
-# ---- 窗口过程 ----
-_WND_PROC = None
-
 @ctypes.WINFUNCTYPE(ctypes.c_long, wintypes.HWND, wintypes.UINT, wintypes.WPARAM, wintypes.LPARAM)
 def _window_proc(hwnd, msg, wparam, lparam):
     try:
-        if msg == WM_USER_TRAY:
-            pass
         return user32.DefWindowProcW(hwnd, msg, wparam, lparam)
     except Exception:
         return 0
 
 
 # ---- ICO 生成 ----
-def _generate_ico(filepath, size=32):
-    """生成一个录制指示图标（红点）"""
+def _generate_ico(filepath, size=32, color=(255, 59, 48)):
+    """生成指示图标，color 为 (R,G,B) 元组"""
     center = size // 2
     radius = size // 2 - 2
+    r, g, b = color
 
     pixels_rgba = []
     for y in range(size):
         for x in range(size):
             dx, dy = x - center, y - center
             if dx * dx + dy * dy <= radius * radius:
-                pixels_rgba.append((255, 59, 48, 255))  # 红色
+                pixels_rgba.append((r, g, b, 255))
             else:
                 pixels_rgba.append((0, 0, 0, 0))
 
-    # DIB header (40 bytes)
     dib = struct.pack("<IiiHHIIiiII",
         40, size, size * 2, 1, 32, 0, size * size * 4, 0, 0, 0, 0)
-
-    # Pixel data (bottom-up, BGRA)
     pixel_data = b""
     for y in range(size - 1, -1, -1):
         for x in range(size):
-            r, g, b, a = pixels_rgba[y * size + x]
-            pixel_data += struct.pack("BBBB", b, g, r, a)
-
+            pr, pg, pb, pa = pixels_rgba[y * size + x]
+            pixel_data += struct.pack("BBBB", pb, pg, pr, pa)
     and_mask = b"\x00" * (size * ((size + 7) // 8))
     bmp_data = dib + pixel_data + and_mask
 
-    # ICO header + directory
     offset = 6 + 16
-    ico = struct.pack("<HHH", 0, 1, 1)  # reserved, type=ICO, count=1
+    ico = struct.pack("<HHH", 0, 1, 1)
     ico += struct.pack("<BBBBHHII",
         size if size < 256 else 0, size if size < 256 else 0,
         0, 0, 1, 32, len(bmp_data), offset)
@@ -114,26 +106,71 @@ def _generate_ico(filepath, size=32):
     return filepath
 
 
-# ---- 托盘类 ----
 class TrayIcon:
     def __init__(self):
-        self._ico_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "icon.ico")
+        base = os.path.dirname(os.path.abspath(__file__))
+        self._ico_red = os.path.join(base, "icon_rec.ico")
+        self._ico_green = os.path.join(base, "icon_play.ico")
         self._nid = None
-        self._recording = False
+        self._active = False          # 托盘图标是否显示中
+        self._mode = None             # "record" 或 "play"
         self._start_time = None
         self._timer_thread = None
         self._timer_running = False
         self._hwnd = None
         self._browser_hwnd = None
 
+    # ---- 录制 ----
     def start_recording(self):
-        if self._recording:
+        if self._active:
             return
-        self._recording = True
+        self._mode = "record"
+        self._active = True
         self._start_time = time.time()
 
-        _generate_ico(self._ico_path)
-        hicon = user32.LoadImageW(0, self._ico_path, 1, 0, 0, 0x00000010)
+        _generate_ico(self._ico_red, color=(255, 59, 48))
+        self._show_tray("录制中... 00:00")
+
+        # 录制时隐藏浏览器
+        self._hide_browser()
+
+        self._start_timer()
+
+    # ---- 回放 ----
+    def start_playback(self):
+        if self._active:
+            return
+        self._mode = "play"
+        self._active = True
+        self._start_time = time.time()
+
+        _generate_ico(self._ico_green, color=(80, 200, 120))
+        self._show_tray("回放中... Ctrl+Shift+F10 停止")
+
+        # 回放时 NOT 隐藏浏览器
+        self._start_timer()
+
+    # ---- 停止 ----
+    def stop(self):
+        if not self._active:
+            return
+        was_record = self._mode == "record"
+        self._active = False
+        self._mode = None
+        self._timer_running = False
+
+        self._remove_tray()
+
+        if was_record:
+            self._restore_browser()
+
+    stop_recording = stop   # 兼容旧接口
+    stop_playback = stop
+
+    # ---- 内部 ----
+    def _show_tray(self, tip):
+        ico_path = self._ico_red if self._mode == "record" else self._ico_green
+        hicon = user32.LoadImageW(0, ico_path, 1, 0, 0, 0x00000010)
         if not hicon:
             return
 
@@ -146,42 +183,51 @@ class TrayIcon:
         self._nid.uFlags = NIF_MESSAGE | NIF_ICON | NIF_TIP
         self._nid.uCallbackMessage = WM_USER_TRAY
         self._nid.hIcon = hicon
-        self._nid.szTip = "录制中... 00:00"
+        self._nid.szTip = tip
         shell32.Shell_NotifyIconW(NIM_ADD, ctypes.byref(self._nid))
 
-        self._hide_browser()
-
-        self._timer_running = True
-        self._timer_thread = threading.Thread(target=self._update_timer, daemon=True)
-        self._timer_thread.start()
-
-    def stop_recording(self):
-        if not self._recording:
-            return
-        self._recording = False
-        self._timer_running = False
-
+    def _remove_tray(self):
         if self._nid:
             shell32.Shell_NotifyIconW(NIM_DELETE, ctypes.byref(self._nid))
             self._nid = None
-
         if self._hwnd:
             user32.DestroyWindow(self._hwnd)
             self._hwnd = None
 
-        self._restore_browser()
-
     def _create_message_window(self):
+        if self._hwnd:
+            return
         class_name = "MouseRecorderTray"
         wc = WNDCLASSW()
         wc.lpfnWndProc = ctypes.cast(_window_proc, ctypes.c_void_p)
         wc.hInstance = kernel32.GetModuleHandleW(0)
         wc.lpszClassName = class_name
-
         user32.RegisterClassW(ctypes.byref(wc))
         self._hwnd = user32.CreateWindowExW(0, class_name, "", 0, 0, 0, 0, 0, 0, 0, 0, 0)
 
-    def _hide_browser(self):
+    def _start_timer(self):
+        self._timer_running = True
+        self._timer_thread = threading.Thread(target=self._update_timer, daemon=True)
+        self._timer_thread.start()
+
+    def _update_timer(self):
+        while self._timer_running:
+            elapsed = int(time.time() - self._start_time)
+            mins, secs = divmod(elapsed, 60)
+            if self._mode == "record":
+                tip = f"录制中... {mins:02d}:{secs:02d}"
+            else:
+                tip = f"回放中... {mins:02d}:{secs:02d}  (Ctrl+Shift+F10 停止)"
+            if self._nid:
+                self._nid.szTip = tip
+                self._nid.uFlags = NIF_TIP
+                try:
+                    shell32.Shell_NotifyIconW(NIM_MODIFY, ctypes.byref(self._nid))
+                except Exception:
+                    pass
+            time.sleep(1)
+
+    def _find_browser(self):
         found = []
 
         @ctypes.WINFUNCTYPE(wintypes.BOOL, wintypes.HWND, wintypes.LPARAM)
@@ -199,9 +245,13 @@ class TrayIcon:
             return True
 
         user32.EnumWindows(enum_callback, 0)
-        if found:
-            self._browser_hwnd = found[0]
-            user32.ShowWindow(self._browser_hwnd, SW_MINIMIZE)
+        return found[0] if found else None
+
+    def _hide_browser(self):
+        hwnd = self._find_browser()
+        if hwnd:
+            self._browser_hwnd = hwnd
+            user32.ShowWindow(hwnd, SW_MINIMIZE)
 
     def _restore_browser(self):
         if self._browser_hwnd:
@@ -209,22 +259,10 @@ class TrayIcon:
             user32.SetForegroundWindow(self._browser_hwnd)
             self._browser_hwnd = None
 
-    def _update_timer(self):
-        while self._timer_running:
-            elapsed = int(time.time() - self._start_time)
-            mins, secs = divmod(elapsed, 60)
-            tip = f"录制中... {mins:02d}:{secs:02d}"
-            if self._nid:
-                self._nid.szTip = tip
-                self._nid.uFlags = NIF_TIP
-                try:
-                    shell32.Shell_NotifyIconW(NIM_MODIFY, ctypes.byref(self._nid))
-                except Exception:
-                    pass
-            time.sleep(1)
-
     @property
     def recording(self):
-        return self._recording
+        return self._active and self._mode == "record"
 
-
+    @property
+    def active(self):
+        return self._active

@@ -41,7 +41,7 @@ class App:
 
     def stop_recording(self):
         data = self._recorder.stop()
-        self._tray.stop_recording()
+        self._tray.stop()
         if data:
             rec_id = save_recording(data)
             return rec_id
@@ -116,7 +116,7 @@ class App:
     def shutdown(self):
         if self._recorder and self._recorder.recording:
             self._recorder.stop()
-        self._tray.stop_recording()
+        self._tray.stop()
         if self._player:
             self._player.stop()
         self._hotkeys.stop()
@@ -143,4 +143,6 @@ class App:
 if __name__ == "__main__":
     app = App()
     app.run()
+
+
 
