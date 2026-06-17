@@ -55,11 +55,19 @@ class App:
         if data is None:
             return
         self._last_selected_id = recording_id
+        self._tray.start_playback()
         self._player.play(data, speed=speed, loop_count=loop_count, on_status=None)
+
+        def _monitor():
+            while self._player.playing:
+                time.sleep(0.2)
+            self._tray.stop()
+        threading.Thread(target=_monitor, daemon=True).start()
 
     def stop_playback(self):
         if self._player:
             self._player.stop()
+        self._tray.stop()
 
     # ---- 录制管理 ----
     def list_recordings(self):
@@ -77,10 +85,9 @@ class App:
     # ---- 热键 ----
     def set_hotkey(self, which, combo):
         key_list = HotkeyManager.combo_to_key_list(combo)
-        if which == "record":
-            cfg.set_("hotkey_record", key_list)
-        else:
-            cfg.set_("hotkey_play", key_list)
+        key_map = {"record": "hotkey_record", "play": "hotkey_play", "stop": "hotkey_stop"}
+        cfg_key = key_map.get(which, "hotkey_record")
+        cfg.set_(cfg_key, key_list)
         self._update_hotkey_listeners()
 
     def _update_hotkey_listeners(self):
@@ -88,8 +95,12 @@ class App:
             self.config.get("hotkey_record", ["ctrl", "shift", "f9"]))
         play_combo = HotkeyManager.key_list_to_combo(
             self.config.get("hotkey_play", ["ctrl", "shift", "f10"]))
-        self._hotkeys.update_hotkeys(record_combo, play_combo,
-                                     self._on_hotkey_record, self._on_hotkey_play)
+        stop_combo = HotkeyManager.key_list_to_combo(
+            self.config.get("hotkey_stop", ["ctrl", "shift", "f11"]))
+        self._hotkeys.update_hotkeys(record_combo, play_combo, stop_combo,
+                                     self._on_hotkey_record,
+                                     self._on_hotkey_play,
+                                     self._on_hotkey_stop)
 
     def _on_hotkey_record(self):
         if self._recorder and self._recorder.recording:
@@ -97,6 +108,12 @@ class App:
         else:
             mode = self.config.get("record_mode", "absolute")
             self.start_recording(mode)
+
+    def _on_hotkey_stop(self):
+        if self._recorder and self._recorder.recording:
+            self.stop_recording()
+        if self._player and self._player.playing:
+            self.stop_playback()
 
     def _on_hotkey_play(self):
         if self._player and self._player.playing:
@@ -130,6 +147,7 @@ class App:
         print(f"Web 界面: {url}")
         print(f"录制热键: Ctrl+Shift+F9")
         print(f"回放热键: Ctrl+Shift+F10")
+        print(f"停止热键: Ctrl+Shift+F11")
         print(f"按 Ctrl+C 退出")
         threading.Thread(target=lambda: (time.sleep(0.5), webbrowser.open(url)), daemon=True).start()
         try:
@@ -143,6 +161,3 @@ class App:
 if __name__ == "__main__":
     app = App()
     app.run()
-
-
-

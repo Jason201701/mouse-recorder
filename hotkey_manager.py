@@ -27,7 +27,6 @@ class HotkeyManager:
     def _run(self):
         while self._running:
             try:
-                # 构建当前热键映射
                 hotkeys = self._build_hotkeys()
                 if hotkeys:
                     self._listener = keyboard.GlobalHotKeys(hotkeys)
@@ -48,7 +47,6 @@ class HotkeyManager:
         return result
 
     def register(self, combo, callback):
-        """注册热键，combo 格式如 '<ctrl>+<shift>+r'"""
         self._callbacks[combo] = callback
         self._restart_listener()
 
@@ -56,13 +54,14 @@ class HotkeyManager:
         self._callbacks.pop(combo, None)
         self._restart_listener()
 
-    def update_hotkeys(self, record_combo, play_combo, on_record, on_play):
-        """批量更新录制/回放热键"""
+    def update_hotkeys(self, record_combo, play_combo, stop_combo, on_record, on_play, on_stop):
         self._callbacks.clear()
         if record_combo:
             self._callbacks[record_combo] = on_record
         if play_combo:
             self._callbacks[play_combo] = on_play
+        if stop_combo:
+            self._callbacks[stop_combo] = on_stop
         self._restart_listener()
 
     def _restart_listener(self):
@@ -72,7 +71,6 @@ class HotkeyManager:
             except Exception:
                 pass
             self._listener = None
-        # 重新 join 旧的会自然结束，新的 run 循环会创建新 listener
         if self._running:
             try:
                 self._listener = keyboard.GlobalHotKeys(self._build_hotkeys())
@@ -82,7 +80,6 @@ class HotkeyManager:
 
     @staticmethod
     def key_list_to_combo(keys):
-        """将按键列表转为 pynput 热键字符串，如 ['ctrl', 'shift', 'r'] -> '<ctrl>+<shift>+r'"""
         parts = []
         for k in keys:
             k = k.strip().lower()
@@ -93,7 +90,6 @@ class HotkeyManager:
 
     @staticmethod
     def combo_to_key_list(combo):
-        """反向：'<ctrl>+<shift>+r' -> ['ctrl', 'shift', 'r']"""
         parts = combo.split("+")
         result = []
         for p in parts:

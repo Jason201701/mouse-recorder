@@ -145,7 +145,7 @@ class TrayIcon:
         self._start_time = time.time()
 
         _generate_ico(self._ico_green, color=(80, 200, 120))
-        self._show_tray("回放中... Ctrl+Shift+F10 停止")
+        self._show_tray("回放中... Ctrl+Shift+F11 停止")
 
         # 回放时 NOT 隐藏浏览器
         self._start_timer()
@@ -217,7 +217,7 @@ class TrayIcon:
             if self._mode == "record":
                 tip = f"录制中... {mins:02d}:{secs:02d}"
             else:
-                tip = f"回放中... {mins:02d}:{secs:02d}  (Ctrl+Shift+F10 停止)"
+                tip = f"回放中... {mins:02d}:{secs:02d}  (Ctrl+Shift+F11 停止)"
             if self._nid:
                 self._nid.szTip = tip
                 self._nid.uFlags = NIF_TIP
@@ -266,3 +266,4 @@ class TrayIcon:
     @property
     def active(self):
         return self._active
+

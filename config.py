@@ -8,6 +8,7 @@ CONFIG_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "config.j
 DEFAULT_CONFIG = {
     "hotkey_record": ["ctrl", "shift", "f9"],
     "hotkey_play": ["ctrl", "shift", "f10"],
+    "hotkey_stop": ["ctrl", "shift", "f11"],
     "default_speed": 1.0,
     "record_mode": "absolute",
 }
@@ -42,5 +43,3 @@ def set_(key, value):
         load_config()
     _config[key] = value
     save_config()
-
-

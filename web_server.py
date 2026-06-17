@@ -11,7 +11,7 @@ STATIC_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static")
 
 class APIHandler(BaseHTTPRequestHandler):
     """处理 API 请求 + 静态文件"""
-    app_ref = None  # 由外部注入
+    app_ref = None
 
     def do_GET(self):
         parsed = urlparse(self.path)
@@ -25,6 +25,7 @@ class APIHandler(BaseHTTPRequestHandler):
             self._json_response({
                 "hotkey_record": self.app_ref.config.get("hotkey_record", []),
                 "hotkey_play": self.app_ref.config.get("hotkey_play", []),
+                "hotkey_stop": self.app_ref.config.get("hotkey_stop", []),
                 "default_speed": self.app_ref.config.get("default_speed", 1.0),
                 "record_mode": self.app_ref.config.get("record_mode", "absolute"),
             })
@@ -58,7 +59,7 @@ class APIHandler(BaseHTTPRequestHandler):
             speed = float(body.get("speed") or 1.0)
             loops = int(body.get("loops") or 1)
             if loops <= 0:
-                loops = 999999  # 近似无限
+                loops = 999999
             if rec_id:
                 self.app_ref.play_recording(rec_id, speed, loops)
                 self._json_response({"status": "playing"})
@@ -92,7 +93,7 @@ class APIHandler(BaseHTTPRequestHandler):
             else:
                 self._json_response({"error": "missing id"}, 400)
         elif path == "/api/config":
-            for key in ("hotkey_record", "hotkey_play", "default_speed", "record_mode"):
+            for key in ("hotkey_record", "hotkey_play", "hotkey_stop", "default_speed", "record_mode"):
                 if key in body:
                     from config import set_
                     set_(key, body[key])
@@ -147,7 +148,7 @@ class APIHandler(BaseHTTPRequestHandler):
         self.end_headers()
 
     def log_message(self, format, *args):
-        pass  # 静默日志
+        pass
 
 
 class WebServer:
@@ -168,7 +169,3 @@ class WebServer:
         if self._server:
             self._server.shutdown()
             self._server = None
-
-
-
-
