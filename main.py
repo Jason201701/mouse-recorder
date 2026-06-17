@@ -85,9 +85,9 @@ class App:
 
     def _update_hotkey_listeners(self):
         record_combo = HotkeyManager.key_list_to_combo(
-            self.config.get("hotkey_record", ["ctrl", "shift", "r"]))
+            self.config.get("hotkey_record", ["ctrl", "shift", "f9"]))
         play_combo = HotkeyManager.key_list_to_combo(
-            self.config.get("hotkey_play", ["ctrl", "shift", "p"]))
+            self.config.get("hotkey_play", ["ctrl", "shift", "f10"]))
         self._hotkeys.update_hotkeys(record_combo, play_combo,
                                      self._on_hotkey_record, self._on_hotkey_play)
 
@@ -128,8 +128,8 @@ class App:
         url = self._server.start()
         print(f"Mouse Recorder 已启动")
         print(f"Web 界面: {url}")
-        print(f"录制热键: Ctrl+Shift+R")
-        print(f"回放热键: Ctrl+Shift+P")
+        print(f"录制热键: Ctrl+Shift+F9")
+        print(f"回放热键: Ctrl+Shift+F10")
         print(f"按 Ctrl+C 退出")
         threading.Thread(target=lambda: (time.sleep(0.5), webbrowser.open(url)), daemon=True).start()
         try:
@@ -143,3 +143,4 @@ class App:
 if __name__ == "__main__":
     app = App()
     app.run()
+

@@ -6,8 +6,8 @@ import os
 CONFIG_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "config.json")
 
 DEFAULT_CONFIG = {
-    "hotkey_record": ["ctrl", "shift", "r"],
-    "hotkey_play": ["ctrl", "shift", "p"],
+    "hotkey_record": ["ctrl", "shift", "f9"],
+    "hotkey_play": ["ctrl", "shift", "f10"],
     "default_speed": 1.0,
     "record_mode": "absolute",
 }
@@ -42,4 +42,5 @@ def set_(key, value):
         load_config()
     _config[key] = value
     save_config()
+
 

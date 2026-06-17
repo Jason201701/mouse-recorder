@@ -68,7 +68,7 @@ select, input[type=number], input[type=text] { background: #45475a; color: #cdd6
       <button class="danger" id="btn-stop" onclick="stopPlay()" disabled>⏹ 停止回放</button>
     </div>
     <div style="margin-top:10px;font-size:0.8em;">
-      <span style="color:#a6adc8;">提示：也可使用全局热键操控（Ctrl+Shift+R 录制 / Ctrl+Shift+P 回放）</span>
+      <span style="color:#a6adc8;">提示：也可使用全局热键操控（Ctrl+Shift+F9 录制 / Ctrl+Shift+F10 回放）</span>
     </div>
   </div>
 
@@ -95,8 +95,8 @@ select, input[type=number], input[type=text] { background: #45475a; color: #cdd6
       </div>
     </div>
     <div class="settings-grid" style="margin-top:10px">
-      <label>录制热键</label><span class="val" id="cfg-hk-record">Ctrl+Shift+R</span>
-      <label>回放热键</label><span class="val" id="cfg-hk-play">Ctrl+Shift+P</span>
+      <label>录制热键</label><span class="val" id="cfg-hk-record">Ctrl+Shift+F9</span>
+      <label>回放热键</label><span class="val" id="cfg-hk-play">Ctrl+Shift+F10</span>
     </div>
     <div style="margin-top:8px">
       <button onclick="showHotkeyModal('record')">修改录制热键</button>
@@ -320,3 +320,4 @@ refreshStatus();
 </script>
 </body>
 </html>
+
