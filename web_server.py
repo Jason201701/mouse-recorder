@@ -47,7 +47,7 @@ class APIHandler(BaseHTTPRequestHandler):
         body = json.loads(self.rfile.read(length)) if length > 0 else {}
 
         if path == "/api/record/start":
-            mode = body.get("mode", "absolute")
+            mode = body.get("mode") or "absolute"
             self.app_ref.start_recording(mode)
             self._json_response({"status": "recording"})
         elif path == "/api/record/stop":
@@ -55,8 +55,8 @@ class APIHandler(BaseHTTPRequestHandler):
             self._json_response({"status": "stopped", "id": rec_id})
         elif path == "/api/play":
             rec_id = body.get("id")
-            speed = float(body.get("speed", 1.0))
-            loops = int(body.get("loops", 1))
+            speed = float(body.get("speed") or 1.0)
+            loops = int(body.get("loops") or 1)
             if loops <= 0:
                 loops = 999999  # 近似无限
             if rec_id:
@@ -168,6 +168,7 @@ class WebServer:
         if self._server:
             self._server.shutdown()
             self._server = None
+
 
 
 

@@ -177,8 +177,8 @@ async function toggleRecord() {
 
 async function playSelected() {
   if (!selId) return alert('请先选择一个录制');
-  let speed = parseFloat(document.getElementById('cfg-speed').value);
-  let loops = document.getElementById('cfg-infinite').checked ? 0 : parseInt(document.getElementById('cfg-loops').value) || 1;
+  let speed = parseFloat(document.getElementById('cfg-speed').value) || 1.0;
+  let loops = document.getElementById('cfg-infinite').checked ? 0 : (parseInt(document.getElementById('cfg-loops').value) || 1);
   await api('/api/play', 'POST', {id: selId, speed, loops});
   document.getElementById('btn-play').disabled = true;
   document.getElementById('btn-stop').disabled = false;
@@ -320,4 +320,5 @@ refreshStatus();
 </script>
 </body>
 </html>
+
 
