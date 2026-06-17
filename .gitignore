@@ -10,3 +10,8 @@ server.log
 env/
 
 icon_*.ico
+
+# Build artifacts
+build/
+dist/
+*.spec.bak

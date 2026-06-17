@@ -77,3 +77,15 @@ MouseRecorder/
 ## License
 
 MIT
+
+## Build EXE
+
+```bash
+pip install pyinstaller
+python -m PyInstaller MouseRecorder.spec --clean --noconfirm
+```
+
+Or simply run `build.bat`.
+
+The output is at `dist/MouseRecorder.exe` (~7.5 MB, no Python required).
+
