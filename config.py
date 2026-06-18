@@ -2,8 +2,9 @@
 
 import json
 import os
+from utils import get_app_dir
 
-CONFIG_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "config.json")
+CONFIG_PATH = os.path.join(get_app_dir(), "config.json")
 
 DEFAULT_CONFIG = {
     "hotkey_record": ["ctrl", "shift", "f9"],

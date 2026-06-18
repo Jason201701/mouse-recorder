@@ -4,8 +4,9 @@ import json
 import os
 import time
 import uuid
+from utils import get_app_dir
 
-STORAGE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "recordings")
+STORAGE_DIR = os.path.join(get_app_dir(), "recordings")
 
 
 def _ensure_dir():

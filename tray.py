@@ -6,6 +6,7 @@ import struct
 import threading
 import time
 from ctypes import wintypes
+from utils import get_app_dir
 
 # ---- Windows API 常量 ----
 NIM_ADD = 0
@@ -103,7 +104,7 @@ def _generate_ico(filepath, size=32, color=(255, 59, 48)):
 
 class TrayIcon:
     def __init__(self, get_hwnd=None):
-        base = os.path.dirname(os.path.abspath(__file__))
+        base = get_app_dir()
         self._ico_red = os.path.join(base, "icon_rec.ico")
         self._ico_green = os.path.join(base, "icon_play.ico")
         self._get_hwnd = get_hwnd  # callback: () -> int | None
@@ -271,3 +272,4 @@ class TrayIcon:
     @property
     def active(self):
         return self._active
+
