@@ -27,7 +27,8 @@ class App:
         self._player = Player()
         self._hotkeys = HotkeyManager()
         self._tray = TrayIcon(get_hwnd=self._get_window_hwnd)
-        self._server = WebServer(self, port=8765)
+        # 使用系统分配的空闲端口，避免与 Clash 等本地程序冲突。
+        self._server = WebServer(self, port=0)
         self._last_selected_id = None
         self._window = None
 

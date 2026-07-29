@@ -161,9 +161,11 @@ class WebServer:
 
     def start(self):
         self._server = HTTPServer(("127.0.0.1", self._port), APIHandler)
+        # 当端口为 0 时，操作系统会选择一个当前可用的临时端口。
+        actual_port = self._server.server_address[1]
         self._thread = threading.Thread(target=self._server.serve_forever, daemon=True)
         self._thread.start()
-        return f"http://127.0.0.1:{self._port}"
+        return f"http://127.0.0.1:{actual_port}"
 
     def stop(self):
         if self._server:
