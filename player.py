@@ -58,12 +58,15 @@ class Player:
         events = recording_data.get("events", [])
         mode = recording_data.get("mode", "absolute")
 
-        for loop in range(self._loop_count):
+        loop = 0
+        while self._loop_count <= 0 or loop < self._loop_count:
             if self._stop_flag.is_set():
                 break
-            self._current_loop = loop + 1
+            loop += 1
+            self._current_loop = loop
             if self._on_status:
-                self._on_status(f"回放中 ({self._current_loop}/{self._loop_count})...")
+                total = "∞" if self._loop_count <= 0 else self._loop_count
+                self._on_status(f"回放中 ({self._current_loop}/{total})...")
 
             if not self._play_events(events, mode):
                 break

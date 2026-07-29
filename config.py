@@ -11,6 +11,8 @@ DEFAULT_CONFIG = {
     "hotkey_play": ["ctrl", "shift", "f10"],
     "hotkey_stop": ["ctrl", "shift", "f11"],
     "default_speed": 1.0,
+    "default_loop_count": 1,
+    "infinite_loop": False,
     "record_mode": "absolute",
 }
 

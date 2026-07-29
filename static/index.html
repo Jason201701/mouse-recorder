@@ -91,7 +91,7 @@ select, input[type=number], input[type=text] { background: #45475a; color: #cdd6
       <label>循环次数</label>
       <div>
         <input type="number" id="cfg-loops" value="1" min="1" style="width:70px" onchange="saveConfig()">
-        <label style="margin-left:10px"><input type="checkbox" id="cfg-infinite" onchange="saveConfig()"> 无限循环</label>
+        <label style="margin-left:10px"><input type="checkbox" id="cfg-infinite" onchange="toggleInfiniteLoop()"> 无限循环</label>
       </div>
     </div>
     <div class="settings-grid" style="margin-top:10px">
@@ -303,14 +303,24 @@ async function loadConfig() {
   let c = await api('/api/config');
   document.getElementById('cfg-mode').value = c.record_mode || 'absolute';
   document.getElementById('cfg-speed').value = String(c.default_speed || 1.0);
+  document.getElementById('cfg-loops').value = Math.max(1, parseInt(c.default_loop_count) || 1);
+  document.getElementById('cfg-infinite').checked = Boolean(c.infinite_loop);
+  document.getElementById('cfg-loops').disabled = Boolean(c.infinite_loop);
   document.getElementById('cfg-hk-record').textContent = (c.hotkey_record || ['ctrl','shift','r']).map(s => s.charAt(0).toUpperCase()+s.slice(1)).join('+');
   document.getElementById('cfg-hk-play').textContent = (c.hotkey_play || ['ctrl','shift','p']).map(s => s.charAt(0).toUpperCase()+s.slice(1)).join('+');
+}
+
+function toggleInfiniteLoop() {
+  document.getElementById('cfg-loops').disabled = document.getElementById('cfg-infinite').checked;
+  saveConfig();
 }
 
 async function saveConfig() {
   await api('/api/config', 'POST', {
     record_mode: document.getElementById('cfg-mode').value,
     default_speed: parseFloat(document.getElementById('cfg-speed').value),
+    default_loop_count: Math.max(1, parseInt(document.getElementById('cfg-loops').value) || 1),
+    infinite_loop: document.getElementById('cfg-infinite').checked,
   });
 }
 

@@ -27,6 +27,8 @@ class APIHandler(BaseHTTPRequestHandler):
                 "hotkey_play": self.app_ref.config.get("hotkey_play", []),
                 "hotkey_stop": self.app_ref.config.get("hotkey_stop", []),
                 "default_speed": self.app_ref.config.get("default_speed", 1.0),
+                "default_loop_count": self.app_ref.config.get("default_loop_count", 1),
+                "infinite_loop": self.app_ref.config.get("infinite_loop", False),
                 "record_mode": self.app_ref.config.get("record_mode", "absolute"),
             })
         elif path == "/api/recording":
@@ -58,8 +60,8 @@ class APIHandler(BaseHTTPRequestHandler):
             rec_id = body.get("id")
             speed = float(body.get("speed") or 1.0)
             loops = int(body.get("loops") or 1)
-            if loops <= 0:
-                loops = 999999
+            if body.get("loops") == 0:
+                loops = 0
             if rec_id:
                 self.app_ref.play_recording(rec_id, speed, loops)
                 self._json_response({"status": "playing"})
@@ -93,7 +95,11 @@ class APIHandler(BaseHTTPRequestHandler):
             else:
                 self._json_response({"error": "missing id"}, 400)
         elif path == "/api/config":
-            for key in ("hotkey_record", "hotkey_play", "hotkey_stop", "default_speed", "record_mode"):
+            for key in (
+                "hotkey_record", "hotkey_play", "hotkey_stop",
+                "default_speed", "default_loop_count", "infinite_loop",
+                "record_mode",
+            ):
                 if key in body:
                     from config import set_
                     set_(key, body[key])

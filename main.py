@@ -126,7 +126,11 @@ class App:
             return
         rec_id = self._last_selected_id or recordings[0]["id"]
         speed = float(self.config.get("default_speed", 1.0))
-        self.play_recording(rec_id, speed=speed, loop_count=1)
+        if self.config.get("infinite_loop", False):
+            loop_count = 0
+        else:
+            loop_count = max(1, int(self.config.get("default_loop_count", 1)))
+        self.play_recording(rec_id, speed=speed, loop_count=loop_count)
 
     def refresh_config(self):
         self.config = cfg.load_config()
